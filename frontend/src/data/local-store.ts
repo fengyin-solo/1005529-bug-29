@@ -20,7 +20,14 @@ function readStorage(): Record<string, EntryRow[]> {
   }
   try {
     const parsed = JSON.parse(raw) as Record<string, EntryRow[]>
-    return { ...fallback, ...parsed }
+    // 兼容既有记录：只接受数组形态的模块数据，历史行里的字段（如考核成绩）按原样保留。
+    const merged = { ...fallback }
+    for (const [key, value] of Object.entries(parsed)) {
+      if (Array.isArray(value)) {
+        merged[key] = value
+      }
+    }
+    return merged
   } catch {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(fallback))
     return fallback

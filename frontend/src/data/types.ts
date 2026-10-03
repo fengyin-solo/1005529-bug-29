@@ -17,6 +17,8 @@ export type ModuleMeta = {
   statuses: string[]
   actions: string[]
   actionTargets: Record<string, string>
+  // 每个动作允许的前置状态：状态只能单向流转，跨级与回退都会被拦下。
+  actionSources: Record<string, string[]>
   metrics: string[]
 }
 

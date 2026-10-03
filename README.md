@@ -68,4 +68,8 @@ npm run build
 - 字段、状态、动作与流转目标集中在 `frontend/src/data/modules.ts`；示例数据在
   `frontend/src/data/seed.ts`。
 - 状态流转只允许在 `local-service.ts` 里改，页面组件不做业务判断。
+- 状态只能单向流转：每个动作允许的前置状态登记在 `modules.ts` 的 `actionSources`，
+  跨级与回退都会被拦下；终态（已合格、未通过等）不再计入概览的「待处理」。
+- 培训的「判定合格 / 判定未通过」会按实际口径重算考核成绩并刷新有效期至，判定结果同步落到
+  供应商审计台账，同一份培训只记一次；历史记录里的考核成绩按原样保留，不做重算。
 - 想回到初始数据：清掉浏览器里 `pharma-cleanroom:entries` 这一项，或调用 `resetModule(模块)`。

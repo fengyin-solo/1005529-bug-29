@@ -24,6 +24,15 @@
       </span>
     </p>
 
+    <form v-if="showCreate" class="filter-bar" @submit.prevent="submitCreate">
+      <label v-for="field in createFields" :key="field" class="filter-item">
+        <span>{{ field }}</span>
+        <input v-model="draft[field]" :placeholder="`填写${field}`" />
+      </label>
+      <button class="btn primary" type="submit">提交登记</button>
+      <button class="btn ghost" type="button" @click="cancelCreate">取消</button>
+    </form>
+
     <form class="filter-bar" @submit.prevent="reload">
       <label v-for="field in filterFields" :key="field" class="filter-item">
         <span>{{ field }}</span>
@@ -74,6 +83,7 @@
 import { computed, onMounted, ref } from 'vue'
 
 import {
+  createEntry,
   downloadEntries,
   listEntries,
   moduleMeta,
@@ -85,17 +95,32 @@ const meta = moduleMeta('training')
 const columns = ["培训编号", "培训主题", "受训岗位", "培训方式", "考核成绩", "培训日期", "有效期至", "培训状态"]
 const actions = ["提交培训", "判定合格", "判定未通过"]
 const statuses = ["待培训", "培训中", "已合格", "未通过"]
-const stats = [{"label": "待培训人员", "value": 0}, {"label": "培训中人员", "value": 0}, {"label": "未通过人员数", "value": 0}]
+const statCards = [{"label": "待培训人员", "status": "待培训"}, {"label": "培训中人员", "status": "培训中"}, {"label": "已合格人员", "status": "已合格"}, {"label": "未通过人员数", "status": "未通过"}]
+const createFields = ["培训主题", "受训岗位", "培训方式"]
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+const showCreate = ref(false)
+const draft = ref<Record<string, string>>({})
+
+function countByStatus(status: string): number {
+  return rows.value.filter((row) => String(row.status) === status).length
+}
+
+// 概览卡片与下方列表、状态图例读的是同一份行数据，合格人数两边必然对得上。
+const stats = computed(() =>
+  statCards.map((item: { label: string; status: string }) => ({
+    label: item.label,
+    value: countByStatus(item.status),
+  })),
+)
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
-    count: rows.value.filter((row) => String(row.status) === status).length,
+    count: countByStatus(status),
   })),
 )
 
@@ -109,7 +134,25 @@ function exportRows() {
 }
 
 function openCreate() {
-  errorMessage.value = '培训记录登记入口尚未接入审批流'
+  errorMessage.value = ''
+  draft.value = {}
+  showCreate.value = true
+}
+
+function cancelCreate() {
+  showCreate.value = false
+  draft.value = {}
+}
+
+function submitCreate() {
+  errorMessage.value = ''
+  const result = createEntry(meta.key, draft.value)
+  if (!result.ok) {
+    errorMessage.value = result.message
+    return
+  }
+  cancelCreate()
+  reload()
 }
 
 function runAction(action: string, row: EntryRow) {
