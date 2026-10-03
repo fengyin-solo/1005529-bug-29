@@ -18,6 +18,8 @@ export type ModuleMeta = {
   actions: string[]
   actionTargets: Record<string, string>
   metrics: string[]
+  // 状态机：当前状态 => 该状态允许执行的动作。缺省表示沿用旧的宽松流转。
+  allowedActions?: Record<string, string[]>
 }
 
 export type PageResult = {

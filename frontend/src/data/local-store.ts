@@ -54,6 +54,19 @@ export function resetRows(key: string): EntryRow[] {
   return rows
 }
 
+// 供应商审计里的「培训判定台账」：作为附属数据和业务记录存在同一份持久化里，
+// 培训判定落台账与培训状态落库在同一个写入动作内完成，刷新、退出再进都不会丢。
+const TRAINING_LEDGER_KEY = '__trainingLedger'
+
+export function listTrainingLedger<T>(): T[] {
+  const store = allRows() as Record<string, unknown>
+  return Array.isArray(store[TRAINING_LEDGER_KEY]) ? (store[TRAINING_LEDGER_KEY] as T[]) : []
+}
+
+export function saveTrainingLedger<T>(entries: T[]): void {
+  saveRows(TRAINING_LEDGER_KEY, entries as unknown as EntryRow[])
+}
+
 export function storageKey(): string {
   return STORAGE_KEY
 }

@@ -67,6 +67,40 @@
       <span>共 {{ total }} 条供应商审计记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
+
+    <section class="ledger-block">
+      <header class="ledger-head">
+        <h3>培训判定台账</h3>
+        <p class="page-desc">人员培训的合格/未通过判定结果落到这里，按培训编号去重，同一份培训重复判定只算一次。</p>
+      </header>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>培训编号</th>
+            <th>培训主题</th>
+            <th>受训岗位</th>
+            <th>考核成绩</th>
+            <th>判定结果</th>
+            <th>判定日期</th>
+            <th>来源</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="entry in ledgerRows" :key="`${entry.trainingId}-${entry.判定日期}`">
+            <td>{{ entry.培训编号 }}</td>
+            <td>{{ entry.培训主题 }}</td>
+            <td>{{ entry.受训岗位 }}</td>
+            <td>{{ entry.考核成绩 }}</td>
+            <td>{{ entry.判定结果 }}</td>
+            <td>{{ entry.判定日期 }}</td>
+            <td>{{ entry.来源 }}</td>
+          </tr>
+          <tr v-if="!ledgerRows.length">
+            <td colspan="7" class="empty-state">暂无培训判定结果，人员培训判定合格/未通过后自动入账</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
   </section>
 </template>
 
@@ -78,7 +112,9 @@ import {
   listEntries,
   moduleMeta,
   runAction as applyAction,
+  trainingLedger,
 } from '@/api/local-service'
+import type { TrainingLedgerEntry } from '@/data/training/service'
 import type { EntryRow } from '@/data/types'
 
 const meta = moduleMeta('supplieraudit')
@@ -92,6 +128,8 @@ const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+// 台账与培训判定共用同一份持久化：进页面时重新读取，培训页刚判定的结果立刻可见。
+const ledgerRows = ref<TrainingLedgerEntry[]>([])
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
@@ -128,6 +166,7 @@ function reload() {
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items
     total.value = payload.total
+    ledgerRows.value = trainingLedger()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '供应商审计列表读取失败'
   }
